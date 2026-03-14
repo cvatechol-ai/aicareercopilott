@@ -68,21 +68,24 @@ export default function FormPage() {
         setLoading(true);
 
         try {
-            const res = await fetch("http://localhost:8000/api/generate-roadmap", {
+            const res = await fetch("http://localhost:3001/api/generate-roadmap", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),
             });
 
-            if (!res.ok) throw new Error("Failed to generate roadmap");
+            if (!res.ok) {
+                const errBody = await res.json().catch(() => ({}));
+                throw new Error(
+                    errBody.error || `Server responded with status ${res.status}`
+                );
+            }
 
-            const data = await res.json();
-            localStorage.setItem("roadmapData", JSON.stringify(data));
+            const json = await res.json();
+            localStorage.setItem("roadmapData", JSON.stringify(json.data));
             router.push("/dashboard");
         } catch (err) {
-            const mockData = getMockData(form);
-            localStorage.setItem("roadmapData", JSON.stringify(mockData));
-            router.push("/dashboard");
+            setError(err.message || "Failed to generate roadmap. Please try again.");
         } finally {
             setLoading(false);
         }
